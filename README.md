@@ -5,7 +5,16 @@ The main focus of this project is to implement the Marching Cubes algorithm on t
 
 ## How to use
 1. Clone the project 
-2. Build the project using CMake
+2. Create a build directory in project folder and run cmake
+   ```
+   mkdir build
+   cd build
+   cmake ..
+   ```
+3. Build the project
+   ```
+   cmake --build .
+   ``` 
 
 You can experiment with different resolutions using the 'gridResolution_3D' variable in the 'src/MarchingCubes.cpp' file.
 The 'resources/shaders/marchingCubes.geom' file contains the algorithm implementation. You can define and visualize your own functions using the 'densityFunction' there.
