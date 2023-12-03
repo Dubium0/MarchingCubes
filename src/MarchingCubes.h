@@ -6,5 +6,13 @@
 #include <iostream>
 #include <glew.h>
 #include <glfw3.h>
-
-// TODO: Reference additional headers your program requires here.
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+#include "LookUpTables.h"
+#include "VertexArray.h"
+#include "Shader.h"
+#include <filesystem>
+#include "Camera.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "Texture.h"
