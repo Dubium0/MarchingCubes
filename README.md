@@ -4,6 +4,7 @@ The main focus of this project is to implement the Marching Cubes algorithm on t
 
 
 ## How to use
+### Windows
 1. Clone the project 
 2. Create a build directory in project folder and run cmake
    ```
