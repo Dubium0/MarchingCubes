@@ -21,8 +21,8 @@ You can experiment with different resolutions using the 'gridResolution_3D' vari
 The 'resources/shaders/marchingCubes.comp' file contains the algorithm implementation. You can define and visualize your own functions using the 'densityFunction' there.
 
 ## TO DO 
-- Dynamically change the grid resolution.
 - Add examples of different visualizations. 
-- Clean up the project, and remove unnecessary stuff.
-- Make further optimization. It is slower than I expected right now.
+- Make further optimization. Memory is highly occupied with this setup.
+- Calculate vertex  normals for smooth shading
+
 
