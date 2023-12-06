@@ -12,6 +12,7 @@
 #include "LookUpTables.h"
 #include "VertexArray.h"
 #include "Shader.h"
+#include "computeShader.h"
 #include <filesystem>
 #include "Camera.h"
 #define STB_IMAGE_IMPLEMENTATION

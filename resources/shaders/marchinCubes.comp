@@ -1,0 +1,116 @@
+#version 430 core
+layout(local_size_x = 1,local_size_y = 1,local_size_z = 1) in;
+
+layout(std430, binding =0) buffer TriangleLookUp{
+	
+	int trianglesTable[];
+
+};
+layout(std430, binding =1) buffer VertexBuffer{
+	
+	float vertexBuffer[];
+
+};
+
+uniform int resolution;
+
+
+
+vec4 cubePos[8] = vec4[8](
+        vec4(-0.5,-0.5,-0.5, 0.0),    //v0
+        vec4( 0.5,-0.5, -0.5, 0.0),   //v1
+        vec4( 0.5,-0.5, 0.5, 0.0),    //v2
+        vec4(-0.5,-0.5, 0.5, 0.0),    //v3
+
+        vec4(-0.5, 0.5,-0.5, 0.0),    //v4
+        vec4( 0.5, 0.5, -0.5, 0.0),   //v5
+        vec4( 0.5, 0.5, 0.5, 0.0),    //v6
+        vec4(-0.5, 0.5, 0.5, 0.0)     //v7
+);
+
+ivec2 edgeIndices[12] = ivec2[12](
+        ivec2(0, 1),   //edge0
+        ivec2(1, 2),   //edge1
+        ivec2(2, 3),   //edge2
+        ivec2(3, 0),   //edge3
+        ivec2(4, 5),   //edge4
+        ivec2(5, 6),   //edge5
+        ivec2(6, 7),   //edge6
+        ivec2(7, 4),   //edge7
+        ivec2(4, 0),   //edge8
+        ivec2(1, 5),   //edge9
+        ivec2(2, 6),   //edge10
+        ivec2(3, 7)    //edge11
+);
+float cubeDensities[8];
+float densityFunc(vec4 ws){
+	return ws.x *ws.x+ws.y*ws.y + ws.z*ws.z -resolution*(resolution-1);
+}
+int GetCubeIndex(){
+    int index = 0;
+    for(int i = 0; i<8;i++){
+        if(cubeDensities[i]>0.0)
+            index = index | int(pow(2,i)) ;
+    }
+    return index;
+}
+
+vec4 interpolateVerticesFromEdgeIndices(int index){
+    vec4 result;
+    vec4 v1= cubePos[edgeIndices[index].x];
+    float v1W = cubeDensities[edgeIndices[index].x];
+    vec4 v2= cubePos[edgeIndices[index].y];
+    float v2W = cubeDensities[edgeIndices[index].y];
+    if(v1W < 0.0001){
+        return v2;
+    }
+    if(v2W < 0.0001){
+        return v1;
+    }
+
+    
+    result = v1 + (abs(v2-v1) /(v1W+ v2W)) * v1W;
+    return result;
+}
+
+vec4 vertices[15] = vec4[](
+    vec4(-999.0),vec4(-999.0),vec4(-999.0),
+    vec4(-999.0),vec4(-999.0),vec4(-999.0),
+    vec4(-999.0),vec4(-999.0),vec4(-999.0),
+    vec4(-999.0),vec4(-999.0),vec4(-999.0),
+    vec4(-999.0),vec4(-999.0),vec4(-999.0)
+);
+
+void SetVerticesToBuffer(uint cI){
+    for(int i = 0; i<15;i++){
+        vertexBuffer[cI*45+i*3] = vertices[i].x;
+        vertexBuffer[cI*45+i*3+1] = vertices[i].y;
+        vertexBuffer[cI*45+i*3+2] = vertices[i].z;
+    }
+
+
+
+}
+void main(){
+    
+     uint currentCubePointIndex = gl_WorkGroupID.z*(gl_NumWorkGroups.y *gl_NumWorkGroups.x) + gl_WorkGroupID.y *(gl_NumWorkGroups.x)  + gl_WorkGroupID.x  ;
+     vec4 worldPosOfCubeCenter =vec4(	gl_WorkGroupID.x -gl_NumWorkGroups.x / 2.0,
+							            gl_WorkGroupID.y -gl_NumWorkGroups.y / 2.0,
+							            gl_WorkGroupID.z -gl_NumWorkGroups.z / 2.0,
+                                        0.0);
+     // update current cube and densities
+     for(int i = 0; i< 8;i++){
+        cubePos[i] += worldPosOfCubeCenter;
+        cubeDensities[i] = densityFunc(cubePos[i]);
+     }
+     int index = GetCubeIndex();
+
+     for(int i = 0;trianglesTable[index*16+i]!=-1 ; i+=3){
+        vertices[i] = interpolateVerticesFromEdgeIndices(trianglesTable[index*16 +i]);
+        vertices[i+1] = interpolateVerticesFromEdgeIndices(trianglesTable[index*16 +i+1]);
+        vertices[i+2] = interpolateVerticesFromEdgeIndices(trianglesTable[index*16 +i+2]);
+      
+     }
+     SetVerticesToBuffer(currentCubePointIndex);
+
+}

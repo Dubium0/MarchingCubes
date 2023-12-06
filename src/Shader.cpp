@@ -68,32 +68,32 @@ Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
     glCheckError();
 }
     const std::string Shader::getShaderCode(const std::string& path) const {
-    std::string code;
-    std::ifstream file;
+        std::string code;
+        std::ifstream file;
 
-    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
-    try
-    {
-        // open files
-        file.open(path);
-        std::stringstream shaderStream;
-        // read file's buffer contents into streams
-        shaderStream << file.rdbuf();
-        // close file handlers
-        file.close();
-        // convert stream into string
-        code = shaderStream.str();
+        try
+        {
+            // open files
+            file.open(path);
+            std::stringstream shaderStream;
+            // read file's buffer contents into streams
+            shaderStream << file.rdbuf();
+            // close file handlers
+            file.close();
+            // convert stream into string
+            code = shaderStream.str();
    
-    }
-    catch (std::ifstream::failure& e)
-    {
-        std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << e.what() << std::endl;
+        }
+        catch (std::ifstream::failure& e)
+        {
+            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << e.what() << std::endl;
        
-    }
-    return code;
+        }
+        return code;
   
-}
+    }
 
 
 Shader::Shader(const std::string& vertexPath,const std::string& fragmentPath, const std::string& geometryPath)

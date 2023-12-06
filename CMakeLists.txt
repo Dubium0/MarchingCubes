@@ -49,7 +49,7 @@ include_directories(
 	
 		
 )
-add_executable(MarchingCubes ${MY_SOURCE_HEADERS} ${MY_SOURCE_FILES} ${IMGUI_SOURCES}  )
+add_executable(MarchingCubes ${MY_SOURCE_HEADERS} ${MY_SOURCE_FILES} ${IMGUI_SOURCES}  "src/computeShader.h")
 
 target_link_libraries(MarchingCubes
 	${OPENGL_LIBRARY}
