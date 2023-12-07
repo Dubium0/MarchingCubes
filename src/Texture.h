@@ -7,7 +7,7 @@
 
 class Texture {
 public:
-	Texture(const std::string& _path, GLint _wrapParam, GLint _filterMode);
+	Texture(const std::string& _path, GLenum target,GLint _wrapParam, GLint _filterMode);
 	~Texture();
 	void Bind(unsigned int channel) const ;
 	void UnBind() const;

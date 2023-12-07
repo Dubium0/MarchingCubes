@@ -1,5 +1,3 @@
-#version 430 core
-//-- noise 3D-----------------------------------------
 //
 // Description : Array and textureless GLSL 2D/3D/4D simplex 
 //               noise functions.
@@ -29,8 +27,8 @@ vec4 taylorInvSqrt(vec4 r)
   return 1.79284291400159 - 0.85373472095314 * r;
 }
 
-float snoise(vec3 v)
-  { 
+float snoise(vec3 v, out vec3 gradient)
+{
   const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
   const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
 
@@ -99,90 +97,15 @@ float snoise(vec3 v)
 
 // Mix final noise value
   vec4 m = max(0.5 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-  m = m * m;
-  return 105.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), 
-                                dot(p2,x2), dot(p3,x3) ) );
-  }
-//----------------------------------------------------
+  vec4 m2 = m * m;
+  vec4 m4 = m2 * m2;
+  vec4 pdotx = vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3));
 
-layout(local_size_x = 1,local_size_y = 1,local_size_z = 1) in;
+// Determine noise gradient
+  vec4 temp = m2 * m * pdotx;
+  gradient = -8.0 * (temp.x * x0 + temp.y * x1 + temp.z * x2 + temp.w * x3);
+  gradient += m4.x * p0 + m4.y * p1 + m4.z * p2 + m4.w * p3;
+  gradient *= 105.0;
 
-layout(std430, binding =2) buffer CleanVertices{
-	
-	float cleanVertices[];
-
-};
-
-
-layout(std430, binding =3) buffer FaceNormals{
-	
-	float faceNormals[];
-
-};
-uniform int resolution;
-float RawNoise(vec3 ws, float scale,float frequency, float weigth, vec3 offSet){
-
-    return (snoise(vec3(ws.x/ scale * frequency + offSet.x , ws.y / scale * frequency + offSet.y,ws.z / scale * frequency + offSet.z)))*weigth;
-
-}
-float ApplyOctave_Raw(vec3 ws, float octave, float scale, vec3 offSet ){
-
-        float frequency = 1.0;
-        float weigth = 1.0;
-        float noiseVal = 0.0;
-        float lacunarity = 2.0;
-        float persistance = 0.5;
-        float divisonVal = 0.0;
-
-
-        for(int i = 0 ; i< octave; i++){
-
-            noiseVal+=RawNoise( ws ,scale,frequency,weigth , offSet);
-
-            divisonVal += weigth;
-            frequency *= lacunarity;
-            weigth*= persistance;
-    
-        }
-
-        noiseVal = noiseVal /divisonVal;
-        return noiseVal;
-
-}
-// this function should be same with actual density funciton in marchingCubes.comp
-float densityFunc(vec3 ws){
-	float density = ApplyOctave_Raw(ws.xyz,4,5,vec3(0.0));
-    //density += snoise(ws.xyz*4.03)*0.25;
-    //density += snoise(ws.xyz*1.96)*0.50;
-    //density += snoise(ws.xyz*1.01)*1.00;
-	return density;
-}
-vec3 computeGradient(vec3 ws){
-	
-	vec3 gradient;
-	float epsilon =1.0/float(resolution);
-	gradient.x=  (densityFunc(vec3(ws.x + epsilon, ws.y, ws.z)) - densityFunc(vec3(ws.x - epsilon, ws.y, ws.z))) / (2 * epsilon);
-	
-	gradient.y=  (densityFunc(vec3(ws.x , ws.y+ epsilon, ws.z)) - densityFunc(vec3(ws.x , ws.y- epsilon, ws.z))) / (2 * epsilon);
-	
-	gradient.z=  (densityFunc(vec3(ws.x , ws.y, ws.z+ epsilon)) - densityFunc(vec3(ws.x , ws.y, ws.z- epsilon))) / (2 * epsilon);
-	return gradient;
-	
-
-	
-}
-
-void main(){
-	uint cIndex=  gl_WorkGroupID.x*9;
-
-	
-	for(int i = 0; i<9; i+=3){
-		vec3 vert = vec3(cleanVertices[cIndex+i],cleanVertices[cIndex+i+1],cleanVertices[cIndex+i+2]);
-		vec3 normal = normalize(computeGradient(vert));
-		faceNormals[cIndex+i] = -normal.x;
-		faceNormals[cIndex+i+1] = -normal.y;
-		faceNormals[cIndex+i+2] = -normal.z;
-
-	}
-
+  return 105.0 * dot(m4, pdotx);
 }

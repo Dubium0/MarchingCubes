@@ -1,22 +1,22 @@
 #include "Texture.h"
 
 
-Texture::Texture(const std::string& _path, GLint _wrapParam, GLint _filterMode) : path(_path),id(0), WIDTH(0),HEIGHT(0),NR_CHANNELS(0),data(nullptr){
+Texture::Texture(const std::string& _path, GLenum target,GLint _wrapParam, GLint _filterMode) : path(_path),id(0), WIDTH(0),HEIGHT(0),NR_CHANNELS(0),data(nullptr){
     
 
     glGenTextures(1, &id);
     glCheckError();
-    glBindTexture(GL_TEXTURE_2D, id);
+    glBindTexture(target, id);
     glCheckError();
     // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, _wrapParam);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(target, GL_TEXTURE_WRAP_S, _wrapParam);	// set texture wrapping to GL_REPEAT (default wrapping method)
     glCheckError();
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, _wrapParam);
+    glTexParameteri(target, GL_TEXTURE_WRAP_T, _wrapParam);
     glCheckError();
     // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, _filterMode);
+    glTexParameteri(target, GL_TEXTURE_MIN_FILTER, _filterMode);
     glCheckError();
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, _filterMode);
+    glTexParameteri(target, GL_TEXTURE_MAG_FILTER, _filterMode);
     glCheckError();
     // load image, create texture and generate mipmaps
    
@@ -26,7 +26,7 @@ Texture::Texture(const std::string& _path, GLint _wrapParam, GLint _filterMode) 
     if (data)
     {
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WIDTH, HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(target, 0, GL_RGBA, WIDTH, HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
         glCheckError();
         glGenerateMipmap(GL_TEXTURE_2D);
         glCheckError();

@@ -24,7 +24,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 
-
 int main(int argc, char* argv[])
 {
 
@@ -84,7 +83,7 @@ int main(int argc, char* argv[])
 
 
 
-    const int gridResolution_3D = 128; //multiply of 2
+    const int gridResolution_3D = 32; //multiply of 2
     const int gridResolutionCubed = gridResolution_3D * gridResolution_3D * gridResolution_3D;
 
     int triangleTable_flat[256 * 16];
@@ -104,79 +103,61 @@ int main(int argc, char* argv[])
 
     ComputeShader marchingCubesCompute = ComputeShader(projectDir + "resources/shaders/marchingCubes.comp");
 
-    unsigned int lookUps, vertexBuffer;
-
-
-    glGenBuffers(1, &lookUps);
-    glCheckError();
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lookUps);
-    glCheckError();
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(triangleTable_flat), triangleTable_flat, GL_DYNAMIC_READ);
-    glCheckError();
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lookUps);
-    glCheckError();
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-    glGenBuffers(1, &vertexBuffer);
-    glCheckError();
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexBuffer);
-    glCheckError();
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * 45 * gridResolutionCubed, nullptr, GL_DYNAMIC_COPY);
-    glCheckError();
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vertexBuffer);
-    glCheckError();
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    marchingCubesCompute.SetInt("resolution", gridResolution_3D / 2);
-    marchingCubesCompute.Activate();
-    glDispatchCompute((unsigned int)gridResolution_3D, (unsigned int)gridResolution_3D, (unsigned int)gridResolution_3D);
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    marchingCubesCompute.Deactivate();
-
-
+  
+    ShaderStorageBuffer lookUps_ssbo = ShaderStorageBuffer(triangleTable_flat, sizeof(triangleTable_flat), 0, GL_DYNAMIC_READ);
+    
+    ShaderStorageBuffer vertexBuffer_ssbo = ShaderStorageBuffer(nullptr, sizeof(float) * 45 * gridResolutionCubed, 1, GL_DYNAMIC_COPY);
+  
     // to show the data
-    std::vector<float>vertexBuffer_Clean;
+     std::vector<float>vertexBuffer_Clean;
+     
 
-    {
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexBuffer);
+    marchingCubesCompute.SetInt("resolution", gridResolution_3D / 2);
+    marchingCubesCompute.SetFloat("isoLevel", 0.0f);
+    for (int x = 0; x < 10; x++) {
+        for (int y = 0; y < 3; y++) {
+            for (int z = 0; z < 10; z++) {
 
-        float* resultData = static_cast<float*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
-        for (int i = 0; i < 45 * gridResolutionCubed; i += 3) {
-            //calcDensities.push_back(resultData[i]);
-            if (resultData[i] > -998.0f) {
-                vertexBuffer_Clean.push_back(resultData[i + 0]);
-                vertexBuffer_Clean.push_back(resultData[i + 1]);
-                vertexBuffer_Clean.push_back(resultData[i + 2]);
+                marchingCubesCompute.SetVec3("offSet", glm::vec3(x,y,z));
+                // generating mesh
+                marchingCubesCompute.Activate();
+                glDispatchCompute((unsigned int)gridResolution_3D, (unsigned int)gridResolution_3D, (unsigned int)gridResolution_3D);
+                glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                marchingCubesCompute.Deactivate();
+                {
+       
+                    vertexBuffer_ssbo.Bind();
+                    float* resultData = static_cast<float*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
+                    for (int i = 0; i < 45 * gridResolutionCubed; i += 3) {
+            
+                        if (resultData[i] > -999.f){
+                            vertexBuffer_Clean.push_back(resultData[i + 0]);
+                            vertexBuffer_Clean.push_back(resultData[i + 1]);
+                            vertexBuffer_Clean.push_back(resultData[i + 2]);
+                        }
+                    }
+
+                    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+     
+                    vertexBuffer_ssbo.UnBind();
+                }
             }
+
         }
 
-        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
-    glDeleteBuffers(1, &vertexBuffer);
 
-    unsigned int toBeCalculated, calculation;
+
+    vertexBuffer_ssbo.~ShaderStorageBuffer();
+    lookUps_ssbo.~ShaderStorageBuffer();
+   
     ComputeShader calcNormals_comp = ComputeShader(projectDir + "resources/shaders/calculateNormals.comp");
-    glGenBuffers(1, &toBeCalculated);
-    glCheckError();
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, toBeCalculated);
-    glCheckError();
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * vertexBuffer_Clean.size(), &vertexBuffer_Clean[0], GL_DYNAMIC_READ);
-    glCheckError();
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, toBeCalculated);
-    glCheckError();
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-    glGenBuffers(1, &calculation);
-    glCheckError();
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, calculation);
-    glCheckError();
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * vertexBuffer_Clean.size(), nullptr, GL_DYNAMIC_COPY);
-    glCheckError();
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, calculation);
-    glCheckError();
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
+    ShaderStorageBuffer toBeCalculated_ssbo = ShaderStorageBuffer(&vertexBuffer_Clean[0], sizeof(float) * vertexBuffer_Clean.size(), 2, GL_DYNAMIC_READ);
+  
+    ShaderStorageBuffer calculation_ssbo = ShaderStorageBuffer(nullptr, sizeof(float) * vertexBuffer_Clean.size(), 3, GL_DYNAMIC_COPY);
+   
+    
     calcNormals_comp.SetInt("resolution", gridResolution_3D / 2);
     calcNormals_comp.Activate();
     glDispatchCompute(vertexBuffer_Clean.size() / 9, 1, 1);
@@ -186,24 +167,24 @@ int main(int argc, char* argv[])
     std::vector<float> surfaceNormals;
 
     {
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, calculation);
-
+        
+        calculation_ssbo.Bind();
         float* resultData = static_cast<float*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
         for (int i = 0; i < vertexBuffer_Clean.size(); i += 3) {
-            //calcDensities.push_back(resultData[i]);
-
+            
             surfaceNormals.push_back(resultData[i + 0]);
             surfaceNormals.push_back(resultData[i + 1]);
             surfaceNormals.push_back(resultData[i + 2]);
-            //std::cout << resultData[i + 0];
+    
         }
 
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    }
 
-    glDeleteBuffers(1, &calculation);
-    glDeleteBuffers(1, &toBeCalculated);
+        
+        calculation_ssbo.UnBind();
+    }
+    toBeCalculated_ssbo.~ShaderStorageBuffer();
+    calculation_ssbo.~ShaderStorageBuffer();
 
     std::vector<float> verticesWithNormals;
 
@@ -231,20 +212,17 @@ int main(int argc, char* argv[])
     attribute.PushAttributef(3);
     VAO.AddVertexArrayAttributef(VBO, attribute);
     Shader shader = Shader(projectDir + "resources/shaders/lit.vert", projectDir + "resources/shaders/lit.frag");
-    //grid.~vector();
-
-
-
-
 
     float scaleValue = 1;
-    camera.Position = glm::vec3(-0.5f, 6.0f, 14.0f);
+    camera.Position = glm::vec3(0.5f, .5f, 1.5f);
     camera.Pitch = -25.0f;
     bool wireFrameMod = false;
     glm::vec3 lightdir(1.0f, 0.0f, 0.0f);
 
-    std::cout << sizeof(float) * vertexBuffer_Clean.size();
+    std::cout << sizeof(float) * verticesWithNormals.size();
     int vertexCount = 0;
+
+
     while (!glfwWindowShouldClose(window))
     {
         double currentFrame = glfwGetTime();
@@ -318,17 +296,8 @@ int main(int argc, char* argv[])
         //    vertexCount+=1;
         //}
 
-
         glDrawArrays(GL_TRIANGLES, 0, (unsigned int)(verticesWithNormals.size() / 6));
         glCheckError();
-
-
-
-
-
-
-
-
 
 
         ImGui::Render();
@@ -352,6 +321,7 @@ int main(int argc, char* argv[])
     glfwTerminate();
     return 0;
 }
+
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -411,9 +381,6 @@ void processInput(GLFWwindow* window)
     }
 }
 
-
-
-
 // glfw: whenever the mouse moves, this callback is called
 // -------------------------------------------------------
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
@@ -441,3 +408,5 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     if (onCameraMode)
         camera.ProcessMouseScroll(yoffset);
 }
+
+
