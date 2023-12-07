@@ -17,12 +17,18 @@ The main focus of this project is to implement the Marching Cubes algorithm on t
    cmake --build .
    ``` 
 
-You can experiment with different resolutions using the 'gridResolution_3D' variable in the 'src/MarchingCubes.cpp' file.
+You can experiment with different resolutions using the 'gridResolution_3D'(make sure you have enough ram for high resolutions like 512(24.4 gb)) variable in the 'src/MarchingCubes.cpp' file.
 The 'resources/shaders/marchingCubes.comp' file contains the algorithm implementation. You can define and visualize your own functions using the 'densityFunction' there.
+
+## Functionalities
+- Function based 3d surface generation
+- Smooth shading
+- High run-time performance 
+
 
 ## TO DO 
 - Add examples of different visualizations. 
 - Make further optimization. Memory is highly occupied with this setup.
-- Calculate vertex  normals for smooth shading
+
 
 

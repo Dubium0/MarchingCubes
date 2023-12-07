@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSwapInterval(0);
-    
+
 
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
     glEnable(GL_DEPTH_TEST);
@@ -81,17 +81,17 @@ int main(int argc, char* argv[])
 
     //-------------------------------
 
-    
-    
-   
-    const int gridResolution_3D =128; //multiply of 2
+
+
+
+    const int gridResolution_3D = 128; //multiply of 2
     const int gridResolutionCubed = gridResolution_3D * gridResolution_3D * gridResolution_3D;
-   
+
     int triangleTable_flat[256 * 16];
 
     for (int i = 0; i < 256; i++) {
         for (int k = 0; k < 16; k++) {
-           
+
             triangleTable_flat[i * 16 + k] = triangleTable[i][k];
         }
     }
@@ -100,18 +100,18 @@ int main(int argc, char* argv[])
     glm::mat4 model(1.0f);
     glm::mat4 view(1.0f);
     glm::mat4 projection(1.0f);
-   
-   
+
+
     ComputeShader marchingCubesCompute = ComputeShader(projectDir + "resources/shaders/marchingCubes.comp");
-   
+
     unsigned int lookUps, vertexBuffer;
-    
+
 
     glGenBuffers(1, &lookUps);
     glCheckError();
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, lookUps);
     glCheckError();
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(triangleTable_flat) , triangleTable_flat, GL_DYNAMIC_READ);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(triangleTable_flat), triangleTable_flat, GL_DYNAMIC_READ);
     glCheckError();
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lookUps);
     glCheckError();
@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
     glCheckError();
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexBuffer);
     glCheckError();
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float)*45* gridResolutionCubed, nullptr, GL_DYNAMIC_COPY);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * 45 * gridResolutionCubed, nullptr, GL_DYNAMIC_COPY);
     glCheckError();
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vertexBuffer);
     glCheckError();
@@ -131,11 +131,11 @@ int main(int argc, char* argv[])
     glDispatchCompute((unsigned int)gridResolution_3D, (unsigned int)gridResolution_3D, (unsigned int)gridResolution_3D);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     marchingCubesCompute.Deactivate();
-    
+
 
     // to show the data
     std::vector<float>vertexBuffer_Clean;
-    
+
     {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexBuffer);
 
@@ -148,11 +148,11 @@ int main(int argc, char* argv[])
                 vertexBuffer_Clean.push_back(resultData[i + 2]);
             }
         }
-    
+
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
-    
+
     glDeleteBuffers(1, &vertexBuffer);
 
     unsigned int toBeCalculated, calculation;
@@ -161,9 +161,9 @@ int main(int argc, char* argv[])
     glCheckError();
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, toBeCalculated);
     glCheckError();
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float)*vertexBuffer_Clean.size(), &vertexBuffer_Clean[0], GL_DYNAMIC_READ);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * vertexBuffer_Clean.size(), &vertexBuffer_Clean[0], GL_DYNAMIC_READ);
     glCheckError();
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,2, toBeCalculated);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, toBeCalculated);
     glCheckError();
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
 
     calcNormals_comp.SetInt("resolution", gridResolution_3D / 2);
     calcNormals_comp.Activate();
-    glDispatchCompute(vertexBuffer_Clean.size()/9,1, 1);
+    glDispatchCompute(vertexBuffer_Clean.size() / 9, 1, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     calcNormals_comp.Deactivate();
 
@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
         float* resultData = static_cast<float*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
         for (int i = 0; i < vertexBuffer_Clean.size(); i += 3) {
             //calcDensities.push_back(resultData[i]);
-           
+
             surfaceNormals.push_back(resultData[i + 0]);
             surfaceNormals.push_back(resultData[i + 1]);
             surfaceNormals.push_back(resultData[i + 2]);
@@ -210,8 +210,8 @@ int main(int argc, char* argv[])
     for (int i = 0; i < surfaceNormals.size(); i += 3) {
         // insert positions
         verticesWithNormals.push_back(vertexBuffer_Clean[i]);
-        verticesWithNormals.push_back(vertexBuffer_Clean[i+1]);
-        verticesWithNormals.push_back(vertexBuffer_Clean[i+2]);
+        verticesWithNormals.push_back(vertexBuffer_Clean[i + 1]);
+        verticesWithNormals.push_back(vertexBuffer_Clean[i + 2]);
         // insert normals
         verticesWithNormals.push_back(surfaceNormals[i]);
         verticesWithNormals.push_back(surfaceNormals[i + 1]);
@@ -232,8 +232,8 @@ int main(int argc, char* argv[])
     VAO.AddVertexArrayAttributef(VBO, attribute);
     Shader shader = Shader(projectDir + "resources/shaders/lit.vert", projectDir + "resources/shaders/lit.frag");
     //grid.~vector();
-   
-   
+
+
 
 
 
@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
     camera.Position = glm::vec3(-0.5f, 6.0f, 14.0f);
     camera.Pitch = -25.0f;
     bool wireFrameMod = false;
-    glm::vec3 lightdir(1.0f,0.0f,0.0f);
+    glm::vec3 lightdir(1.0f, 0.0f, 0.0f);
 
     std::cout << sizeof(float) * vertexBuffer_Clean.size();
     int vertexCount = 0;
@@ -272,19 +272,19 @@ int main(int argc, char* argv[])
 
         ImGui::Begin("Application Stats");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::Text("Number of Vertices : %.3f", vertexBuffer_Clean.size() / 3.0f);
-      
+        ImGui::Text("Number of Vertices : %.3f", (verticesWithNormals.size() / 6.0f));
+
         ImGui::End();
 
 
 
         ImGui::Begin("Drawing Settins");
         ImGui::SliderFloat("Cube Sizes", &scaleValue, 0.0f, 2.0f);
-        std::string res = "Resoulution : " +  to_string(gridResolution_3D) ;
+        std::string res = "Resoulution : " + to_string(gridResolution_3D);
         ImGui::Text(res.c_str());
         ImGui::SliderFloat3("Light Direction", glm::value_ptr(lightdir), -1, 1);
         ImGui::Checkbox("WireFrameMode", &wireFrameMod);
-        if(wireFrameMod){
+        if (wireFrameMod) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
         else {
@@ -295,14 +295,14 @@ int main(int argc, char* argv[])
         model = glm::mat4(1.0f);
         model = glm::scale(model, glm::vec3(1.0f) * scaleValue);
         view = camera.GetViewMatrix();
-        projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.01f, 1000.0f);
+        projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.01f, 10000000000.0f);
 
         shader.SetMatrix4("model", model);
         shader.SetMatrix4("view", view);
         shader.SetMatrix4("projection", projection);
-       
+
         shader.SetVec3("lightDir", lightdir);
-       
+
 
         //opengls stuff
         glClearColor(0.28f, 0.28f, 0.28f, 1.0f);
@@ -312,36 +312,36 @@ int main(int argc, char* argv[])
 
         shader.Activate();
         VAO.Bind();
-        
-        
+
+
         //if (vertexCount < (unsigned int)(verticesWithNormals.size() / 6)) {
         //    vertexCount+=1;
         //}
-        
-        glDrawArrays(GL_TRIANGLES, 0, (unsigned int)(verticesWithNormals.size() / 6));
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(128.0f,0.0f,0.0f));
-        shader.SetMatrix4("model", model);
+
+
         glDrawArrays(GL_TRIANGLES, 0, (unsigned int)(verticesWithNormals.size() / 6));
         glCheckError();
 
 
 
- 
-       
-        
+
+
+
+
+
+
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        
-        
+
+
 
 
         // check-call events and swap buffer---------glfw stuff----------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-   
+
 
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();

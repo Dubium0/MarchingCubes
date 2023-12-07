@@ -35,9 +35,9 @@ void main(){
 	for(int i = 0; i<9; i+=3){
 		vec3 vert = vec3(cleanVertices[cIndex+i],cleanVertices[cIndex+i+1],cleanVertices[cIndex+i+2]);
 		vec3 normal = normalize(computeGradient(vert));
-		faceNormals[cIndex+i] = normal.x;
-		faceNormals[cIndex+i+1] = normal.y;
-		faceNormals[cIndex+i+2] = normal.z;
+		faceNormals[cIndex+i] = -normal.x;
+		faceNormals[cIndex+i+1] = -normal.y;
+		faceNormals[cIndex+i+2] = -normal.z;
 
 	}
 
