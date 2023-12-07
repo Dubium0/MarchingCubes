@@ -72,8 +72,13 @@ vec4 interpolateVerticesFromEdgeIndices(int index){
     result = v1 + (abs(v2-v1) /(v1W+ v2W)) * v1W;
     return result;
 }
+/*
 
-vec4 vertices[15] = vec4[](
+
+
+*/
+
+vec4 vertices[15]=vec4[](
     vec4(-999.0),vec4(-999.0),vec4(-999.0),
     vec4(-999.0),vec4(-999.0),vec4(-999.0),
     vec4(-999.0),vec4(-999.0),vec4(-999.0),

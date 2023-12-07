@@ -174,31 +174,31 @@ void Shader::SetBool(const std::string& name, bool value) const {
     Activate();
 	glUniform1i(glGetUniformLocation(ID, name.c_str()), (int)value);
     glCheckError();
-    Deactivate();
+    
 }
 void Shader::SetInt(const std::string& name, int value) const {
     Activate();
 	glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
     glCheckError();
-    Deactivate();
+    
 }
 void Shader::SetFloat(const std::string& name, float value) const {
     Activate();
 	glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
     glCheckError();
-    Deactivate();
+   
 }
 void Shader::SetMatrix4(const std::string& name, glm::mat4& m4) const {
     Activate();
     glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, glm::value_ptr(m4));
     glCheckError();
-    Deactivate();
+    
 }
 void Shader::SetVec3(const std::string& name,glm::vec3& v3) const {
     Activate();
     glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, glm::value_ptr(v3));
     glCheckError();
-    Deactivate();
+    
 }
 void Shader::SetIntArray(const std::string& name, const int* array, int arraysize) {
     Activate();

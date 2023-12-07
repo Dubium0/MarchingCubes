@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
     
     
    
-    const int gridResolution_3D =256; //multiply of 2
+    const int gridResolution_3D =128; //multiply of 2
     const int gridResolutionCubed = gridResolution_3D * gridResolution_3D * gridResolution_3D;
    
     int triangleTable_flat[256 * 16];
@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
     glm::mat4 projection(1.0f);
    
    
-    ComputeShader marchingCubesCompute = ComputeShader(projectDir + "resources/shaders/marchinCubes.comp");
+    ComputeShader marchingCubesCompute = ComputeShader(projectDir + "resources/shaders/marchingCubes.comp");
    
     unsigned int lookUps, vertexBuffer;
     
@@ -155,12 +155,82 @@ int main(int argc, char* argv[])
     
     glDeleteBuffers(1, &vertexBuffer);
 
+    unsigned int toBeCalculated, calculation;
+    ComputeShader calcNormals_comp = ComputeShader(projectDir + "resources/shaders/calculateNormals.comp");
+    glGenBuffers(1, &toBeCalculated);
+    glCheckError();
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, toBeCalculated);
+    glCheckError();
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float)*vertexBuffer_Clean.size(), &vertexBuffer_Clean[0], GL_DYNAMIC_READ);
+    glCheckError();
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,2, toBeCalculated);
+    glCheckError();
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    glGenBuffers(1, &calculation);
+    glCheckError();
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, calculation);
+    glCheckError();
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * vertexBuffer_Clean.size(), nullptr, GL_DYNAMIC_COPY);
+    glCheckError();
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, calculation);
+    glCheckError();
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    calcNormals_comp.SetInt("resolution", gridResolution_3D / 2);
+    calcNormals_comp.Activate();
+    glDispatchCompute(vertexBuffer_Clean.size()/9,1, 1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    calcNormals_comp.Deactivate();
+
+    std::vector<float> surfaceNormals;
+
+    {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, calculation);
+
+        float* resultData = static_cast<float*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
+        for (int i = 0; i < vertexBuffer_Clean.size(); i += 3) {
+            //calcDensities.push_back(resultData[i]);
+           
+            surfaceNormals.push_back(resultData[i + 0]);
+            surfaceNormals.push_back(resultData[i + 1]);
+            surfaceNormals.push_back(resultData[i + 2]);
+            //std::cout << resultData[i + 0];
+        }
+
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
+
+    glDeleteBuffers(1, &calculation);
+    glDeleteBuffers(1, &toBeCalculated);
+
+    std::vector<float> verticesWithNormals;
+
+    for (int i = 0; i < surfaceNormals.size(); i += 3) {
+        // insert positions
+        verticesWithNormals.push_back(vertexBuffer_Clean[i]);
+        verticesWithNormals.push_back(vertexBuffer_Clean[i+1]);
+        verticesWithNormals.push_back(vertexBuffer_Clean[i+2]);
+        // insert normals
+        verticesWithNormals.push_back(surfaceNormals[i]);
+        verticesWithNormals.push_back(surfaceNormals[i + 1]);
+        verticesWithNormals.push_back(surfaceNormals[i + 2]);
+
+
+    }
+
+    vertexBuffer_Clean.~vector();
+    surfaceNormals.~vector();
+
+
     VertexArray VAO = VertexArray();
-    VertexBuffer VBO = VertexBuffer(&vertexBuffer_Clean[0], sizeof(float) * vertexBuffer_Clean.size());
+    VertexBuffer VBO = VertexBuffer(&verticesWithNormals[0], sizeof(float) * verticesWithNormals.size());
     VertexArrayAttribute attribute = VertexArrayAttribute();
     attribute.PushAttributef(3);
+    attribute.PushAttributef(3);
     VAO.AddVertexArrayAttributef(VBO, attribute);
-    Shader shader = Shader(projectDir + "resources/shaders/unlit.vert", projectDir + "resources/shaders/unlit.frag");
+    Shader shader = Shader(projectDir + "resources/shaders/lit.vert", projectDir + "resources/shaders/lit.frag");
     //grid.~vector();
    
    
@@ -230,10 +300,9 @@ int main(int argc, char* argv[])
         shader.SetMatrix4("model", model);
         shader.SetMatrix4("view", view);
         shader.SetMatrix4("projection", projection);
-
        
-
-
+        shader.SetVec3("lightDir", lightdir);
+       
 
         //opengls stuff
         glClearColor(0.28f, 0.28f, 0.28f, 1.0f);
@@ -243,13 +312,17 @@ int main(int argc, char* argv[])
 
         shader.Activate();
         VAO.Bind();
-        /*
         
-        if (vertexCount < (unsigned int)(vertexBuffer_Clean.size() / 3)) {
-            vertexCount+=4;
-        }
-        */
-        glDrawArrays(GL_TRIANGLES, 0, (unsigned int)(vertexBuffer_Clean.size() / 3));
+        
+        //if (vertexCount < (unsigned int)(verticesWithNormals.size() / 6)) {
+        //    vertexCount+=1;
+        //}
+        
+        glDrawArrays(GL_TRIANGLES, 0, (unsigned int)(verticesWithNormals.size() / 6));
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(128.0f,0.0f,0.0f));
+        shader.SetMatrix4("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, (unsigned int)(verticesWithNormals.size() / 6));
         glCheckError();
 
 
